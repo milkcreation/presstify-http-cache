@@ -1,69 +1,82 @@
 <?php declare(strict_types=1);
 
-namespace tiFy\Plugins\ResponseCache;
+namespace tiFy\Plugins\HttpCache;
 
-use Psr\Container\ContainerInterface;
+use DateTime;
+use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
+use tiFy\Plugins\HttpCache\Contracts\ResponseCache as ResponseCacheContract;
 
-/**
- * Class ResponseCache
- *
- * @desc Extension PresstiFy de mise en cache de la reponse HTTP.
- * @author Jordy Manner <jordy@milkcreation.fr>
- * @package tiFy\Plugins\ResponseCache
- * @version 2.0.0
- *
- * USAGE :
- * Activation
- * ---------------------------------------------------------------------------------------------------------------------
- * Dans config/app.php ajouter \tiFy\Plugins\ResponseCache\ResponseCacheServiceProvider à la liste des fournisseurs de
- * services.
- * ex.
- * <?php
- * ...
- * use tiFy\Plugins\ResponseCache\ResponseCacheServiceProvider;
- * ...
- *
- * return [
- *      ...
- *      'providers' => [
- *          ...
- *          ResponseCacheServiceProvider::class
- *          ...
- *      ]
- * ];
- *
- * Configuration
- * ---------------------------------------------------------------------------------------------------------------------
- * Dans le dossier de config, créer le fichier response-cache.php
- * @see /vendor/presstify-plugins/response-cache/Resources/config/response-cache.php
- */
-class ResponseCache
+class ResponseCache implements ResponseCacheContract
 {
     /**
-     * Instance du conteneur d'injection de dépendances.
-     * @var ContainerInterface|null
+     * @inheritDoc
      */
-    protected $container;
-
-    /**
-     * CONSTRUCTEUR.
-     *
-     * @param ContainerInterface|null Instance du conteneur d'injection de dépendances.
-     *
-     * @return void
-     */
-    public function __construct(ContainerInterface $container)
+    public function cacheNameSuffix(ServerRequestInterface $request)
     {
-        $this->container = $container;
+        return '';
     }
 
     /**
-     * Récupération du conteneur d'injection de dépendances.
-     *
-     * @return ContainerInterface|null
+     * @inheritDoc
      */
-    public function getContainer(): ?ContainerInterface
+    public function cacheRequestUntil(ServerRequestInterface $request): DateTime
     {
-        return $this->container;
+        return new DateTime();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function enabled(ServerRequestInterface $request): bool
+    {
+        return true;
+    }
+
+    /**
+     * Récupération du nom de qualification du fichier en cache.
+     *
+     * @param ServerRequestInterface $request Instance de la requête HTTP PSR-7.
+     *
+     * @return string
+     */
+    public function getCacheName(ServerRequestInterface $request): string
+    {
+        $hash = $request->getUri()->getHost() . $request->getUri()->getPath();
+        $hash .= ($query = $request->getUri()->getQuery()) ? "?{$query}" : '';
+        $hash .= $this->cacheNameSuffix($request);
+
+        return md5($hash);
+    }
+
+    /**
+     * Récupération du chemin de dépôt du fichier en cache.
+     *
+     * @param ServerRequestInterface $request Instance de la requête HTTP PSR-7.
+     *
+     * @return array
+     */
+    public function getCachePath(ServerRequestInterface $request): array
+    {
+        $path = preg_split('#\/#', $request->getUri()->getPath(), 0, PREG_SPLIT_NO_EMPTY) ? : [];
+        array_unshift($path, $request->getUri()->getHost());
+        $path[] = $this->getCacheName($request);
+
+        return $path;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function shouldCacheRequest(ServerRequestInterface $request): bool
+    {
+        return true;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function shouldCacheResponse(ResponseInterface $response): bool
+    {
+        return true;
     }
 }

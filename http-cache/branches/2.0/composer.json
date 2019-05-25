@@ -1,15 +1,19 @@
 {
-  "name": "presstify-plugins/response-cache",
+  "name": "presstify-plugins/http-cache",
   "description": "Extension PresstiFy de mise en cache de la reponse HTTP.",
   "type": "presstify-plugin",
   "keywords": [
     "presstify",
     "plugins",
-    "response",
+    "http",
     "cache",
-    "buffering"
+    "response",
+    "request",
+    "buffering",
+    "psr-7",
+    "psr-15"
   ],
-  "homepage": "https://svn.tigreblanc.fr/presstify-plugins/response-cache",
+  "homepage": "https://svn.tigreblanc.fr/presstify-plugins/http-cache",
   "time": "2019-05-25",
   "license": "proprietary",
   "authors": [
@@ -31,7 +35,7 @@
   },
   "autoload": {
     "psr-4": {
-      "tiFy\\Plugins\\ResponseCache\\": ""
+      "tiFy\\Plugins\\HttpCache\\": ""
     }
   },
   "minimum-stability": "dev",
