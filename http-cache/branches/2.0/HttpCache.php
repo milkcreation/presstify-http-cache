@@ -2,7 +2,9 @@
 
 namespace tiFy\Plugins\HttpCache;
 
-use Psr\Container\ContainerInterface;
+use tiFy\Contracts\Container\Container;
+use tiFy\Contracts\Filesystem\Filesystem;
+use tiFy\Filesystem\StorageManager;
 
 /**
  * Class HttpCache
@@ -12,6 +14,7 @@ use Psr\Container\ContainerInterface;
  * @package tiFy\Plugins\HttpCache
  * @version 2.0.0
  *
+ * @see https://symfony.com/doc/current/http_cache.html
  * @see https://github.com/spatie/laravel-responsecache
  * @see https://murze.be/caching-the-entire-response-of-a-laravel-app
  *
@@ -39,30 +42,52 @@ use Psr\Container\ContainerInterface;
  * Dans le dossier de config, créer le fichier http-cache.php
  * @see /vendor/presstify-plugins/http-cache/Resources/config/http-cache.php
  */
-class HttpCache
+class HttpCache extends StorageManager
 {
     /**
      * Instance du conteneur d'injection de dépendances.
-     * @var ContainerInterface|null
+     * @var Container|null
      */
     protected $container;
 
     /**
+     * Instance du gestionnaire de fichiers de cache.
+     * @var Filesystem
+     */
+    protected $cache;
+
+    /**
      * CONSTRUCTEUR.
      *
-     * @param ContainerInterface|null $container Instance du conteneur d'injection de dépendances.
+     * @param Container|null $container Instance du conteneur d'injection de dépendances.
      *
      * @return void
      */
-    public function __construct(?ContainerInterface $container = null)
+    public function __construct(?Container $container = null)
     {
         $this->container = $container;
+
+        parent::__construct($container);
+    }
+
+    /**
+     * Récupération de l'instance du gestionnaire de fichiers de cache.
+     *
+     * @return Filesystem
+     */
+    public function cache()
+    {
+        if (is_null($this->cache)) {
+            $this->cache = $this->createLocal(WP_CONTENT_DIR . '/uploads/cache/HttpCache');
+        }
+
+        return $this->cache;
     }
 
     /**
      * @inheritDoc
      */
-    public function getContainer(): ?ContainerInterface
+    public function getContainer(): ?Container
     {
         return $this->container;
     }

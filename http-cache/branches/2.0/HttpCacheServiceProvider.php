@@ -42,7 +42,7 @@ class HttpCacheServiceProvider extends ServiceProvider
         });
 
         $this->getContainer()->add(ResponseCacheContract::class, function () {
-            return new ResponseCache();
+            return new ResponseCache($this->getContainer()->get('http-cache'));
         });
 
         $this->getContainer()->add('router.middleware.cache-response', function () {
