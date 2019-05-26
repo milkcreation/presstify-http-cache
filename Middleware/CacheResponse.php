@@ -6,7 +6,6 @@ use Psr\Http\Message\{ResponseInterface,ServerRequestInterface};
 use Psr\Http\Server\{MiddlewareInterface,RequestHandlerInterface};
 use tiFy\Plugins\HttpCache\Contracts\ResponseCache;
 use tiFy\Http\Request;
-//use Zend\Diactoros\Response;
 
 class CacheResponse implements MiddlewareInterface
 {
@@ -31,14 +30,26 @@ class CacheResponse implements MiddlewareInterface
     /**
      * @inheritDoc
      */
-    public function process(ServerRequestInterface $psrRequest, RequestHandlerInterface $handler): ResponseInterface
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $request = Request::createFromPsr($psrRequest);
+        if ($this->responseCache->enabled($request)) {
+            if ($this->responseCache->hasCache($request)) {
+                return $this->responseCache->getCacheResponse($request);
+            }
+        }
 
-        $response = $handler->handle($psrRequest);
+        $response = $handler->handle($request);
 
-        var_dump($this->responseCache->getCachePath($psrRequest));
+        events()->listen('router.emit.response', function (ResponseInterface $response) use ($request) {
+            if ($response->getBody()->getSize()) {
+                if ($this->responseCache->enabled($request)) {
+                    if ($this->responseCache->shouldCache($request, $response)) {
+                        $this->responseCache->cacheResponse($request, $response);
+                    }
+                }
+            }
+        });
 
-        exit;
+        return $response;
     }
 }
