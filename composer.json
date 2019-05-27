@@ -5,6 +5,7 @@
   "keywords": [
     "presstify",
     "plugins",
+    "wordpress",
     "http",
     "cache",
     "response",
@@ -14,7 +15,7 @@
     "psr-15"
   ],
   "homepage": "https://svn.tigreblanc.fr/presstify-plugins/http-cache",
-  "time": "2019-05-26",
+  "time": "2019-05-27",
   "license": "proprietary",
   "authors": [
     {
