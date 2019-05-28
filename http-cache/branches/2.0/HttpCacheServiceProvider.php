@@ -3,8 +3,11 @@
 namespace tiFy\Plugins\HttpCache;
 
 use tiFy\Container\ServiceProvider;
-use tiFy\Plugins\HttpCache\Contracts\ResponseCache as ResponseCacheContract;
-use tiFy\Plugins\HttpCache\Middleware\CacheResponse;
+use tiFy\Plugins\HttpCache\Contracts\{
+    Config as ConfigContract,
+    CacheStatic as CacheStaticContract,
+    ResponseCache as ResponseCacheContract};
+use tiFy\Plugins\HttpCache\{Cache\CacheStatic, Middleware\CacheResponse};
 use tiFy\Support\Proxy\Router;
 
 class HttpCacheServiceProvider extends ServiceProvider
@@ -16,6 +19,8 @@ class HttpCacheServiceProvider extends ServiceProvider
      */
     protected $provides = [
         'http-cache',
+        CacheStaticContract::class,
+        ConfigContract::class,
         ResponseCacheContract::class,
         'router.middleware.cache-response'
     ];
@@ -38,7 +43,17 @@ class HttpCacheServiceProvider extends ServiceProvider
     public function register()
     {
         $this->getContainer()->share('http-cache', function () {
-            return new HttpCache($this->getContainer());
+            $config = $this->getContainer()->get(ConfigContract::class)->set(config('http-cache', []));
+
+            return new HttpCache($config, $this->getContainer());
+        });
+
+        $this->getContainer()->add(CacheStaticContract::class, function (string $root = '') {
+            return new CacheStatic($root, $this->getContainer());
+        });
+
+        $this->getContainer()->add(ConfigContract::class, function () {
+            return new Config();
         });
 
         $this->getContainer()->add(ResponseCacheContract::class, function () {

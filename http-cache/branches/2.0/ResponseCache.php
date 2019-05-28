@@ -2,12 +2,10 @@
 
 namespace tiFy\Plugins\HttpCache;
 
-use DateTime;
-use Minify_HTML;
-use Psr\Http\Message\{ResponseInterface as Response, ServerRequestInterface as Request};
 use tiFy\Http\Response as HttpResponse;
-use tiFy\Contracts\Filesystem\Filesystem;
-use tiFy\Plugins\HttpCache\Contracts\ResponseCache as ResponseCacheContract;
+use voku\helper\HtmlMin;
+use Psr\Http\Message\{ResponseInterface as Response, ServerRequestInterface as Request};
+use tiFy\Plugins\HttpCache\Contracts\{Cache, ResponseCache as ResponseCacheContract};
 
 class ResponseCache implements ResponseCacheContract
 {
@@ -32,6 +30,14 @@ class ResponseCache implements ResponseCacheContract
     /**
      * @inheritDoc
      */
+    public function cache(): Cache
+    {
+        return $this->manager->cache();
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function cacheNameSuffix(Request $request)
     {
         return '';
@@ -40,26 +46,27 @@ class ResponseCache implements ResponseCacheContract
     /**
      * @inheritDoc
      */
-    public function cacheRequestUntil(Request $request): DateTime
+    public function cacheResponse(Request $request, Response $response, ?int $expire = 0): Response
     {
-        return new DateTime();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function cacheResponse(Request $request, Response $response, $lifetimeInSeconds = null): Response
-    {
-        /*if (config('responsecache.add_cache_time_header')) {
+        /*
+        if (config('responsecache.add_cache_time_header')) {
             $response = $this->addCachedHeader($response);
-        }
-        $lifetimeInSeconds = $lifetimeInSeconds
-            ? (int)$lifetimeInSeconds
-            : $this->cacheProfile->cacheRequestUntil($request);*/
-        $content = (string)$response->getBody();
-        $content = Minify_HTML::minify($content);
+        } */
 
-        $this->disk()->put($this->getCachePath($request), $content);
+        $expire = $expire ?: $this->config('expire', 3600);
+
+        $contents = (string)$response->getBody();
+        if ($this->config()->get('minify', true)) {
+            $contents = (new HtmlMin())->minify($contents);
+        }
+
+        if ($this->compressed()) {
+            $contents = gzcompress($contents);
+        }
+
+        $key = $this->cache()->hash($request);
+
+        $this->cache()->store($key, $contents, $expire);
 
         return $response;
     }
@@ -67,9 +74,17 @@ class ResponseCache implements ResponseCacheContract
     /**
      * @inheritDoc
      */
-    public function disk(): Filesystem
+    public function compressed(): bool
     {
-        return $this->manager->cache();
+        return $this->config('compress', true) && extension_loaded('zlib');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function config($key = null, $default = null)
+    {
+        return $this->manager->config($key, $default);
     }
 
     /**
@@ -77,39 +92,7 @@ class ResponseCache implements ResponseCacheContract
      */
     public function enabled(Request $request): bool
     {
-        return true;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getCacheName(Request $request): string
-    {
-        $hash = $request->getUri()->getHost() . $request->getUri()->getPath();
-        $hash .= ($query = $request->getUri()->getQuery()) ? "?{$query}" : '';
-        $hash .= $this->cacheNameSuffix($request);
-
-        return md5($hash);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getCachePath(Request $request): string
-    {
-        return implode('/', $this->getCachePathSegments($request));
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getCachePathSegments(Request $request): array
-    {
-        $segments = preg_split('#\/#', $request->getUri()->getPath(), 0, PREG_SPLIT_NO_EMPTY) ?: [];
-        array_unshift($segments, $request->getUri()->getHost());
-        $segments[] = $this->getCacheName($request);
-
-        return $segments;
+        return $this->config()->get('enabled', true);
     }
 
     /**
@@ -117,10 +100,14 @@ class ResponseCache implements ResponseCacheContract
      */
     public function getCacheResponse(Request $request): Response
     {
-        $path = $this->getCachePath($request);
-        $response = $this->disk()->binary($path);
+        $path = $this->cache()->hash($request);
+        $contents = $this->cache()->contents($path);
 
-        return HttpResponse::convertToPsr($response);
+        if ($this->compressed()) {
+            $contents = gzuncompress($contents);
+        }
+
+        return HttpResponse::convertToPsr(new HttpResponse($contents));
     }
 
     /**
@@ -128,9 +115,9 @@ class ResponseCache implements ResponseCacheContract
      */
     public function hasCache(Request $request): bool
     {
-        $path = $this->getCachePath($request);
+        $path = $this->cache()->hash($request);
 
-        return $this->disk()->has($path);
+        return $this->cache()->exists($path);
     }
 
     /**

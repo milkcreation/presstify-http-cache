@@ -5,7 +5,6 @@ namespace tiFy\Plugins\HttpCache\Middleware;
 use Psr\Http\Message\{ResponseInterface,ServerRequestInterface};
 use Psr\Http\Server\{MiddlewareInterface,RequestHandlerInterface};
 use tiFy\Plugins\HttpCache\Contracts\ResponseCache;
-use tiFy\Http\Request;
 
 class CacheResponse implements MiddlewareInterface
 {
