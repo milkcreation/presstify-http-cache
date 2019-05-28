@@ -10,11 +10,6 @@ class Wordpress
             // Récupération du chemin vers le répertoire temporaire de PHP
             sys_get_temp_dir();
 
-            // Test compression gzip est possible.
-            if (extension_loaded('zlib')) {
-
-            }
-
             add_action('template_redirect', function () {
                 $path = WP_CONTENT_DIR . '/uploads/cache/test';
                 $path .= '/' .  md5($_SERVER['REQUEST_URI']);

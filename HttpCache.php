@@ -3,8 +3,12 @@
 namespace tiFy\Plugins\HttpCache;
 
 use tiFy\Contracts\Container\Container;
-use tiFy\Contracts\Filesystem\Filesystem;
-use tiFy\Filesystem\StorageManager;
+use tiFy\Plugins\HttpCache\Contracts\{
+    Cache,
+    CacheStatic as CacheStaticContract,
+    Config as ConfigContract,
+    HttpCache as HttpCacheContract};
+use tiFy\Plugins\HttpCache\Cache\CacheStatic;
 
 /**
  * Class HttpCache
@@ -42,7 +46,7 @@ use tiFy\Filesystem\StorageManager;
  * Dans le dossier de config, créer le fichier http-cache.php
  * @see /vendor/presstify-plugins/http-cache/Resources/config/http-cache.php
  */
-class HttpCache extends StorageManager
+class HttpCache implements HttpCacheContract
 {
     /**
      * Instance du conteneur d'injection de dépendances.
@@ -52,33 +56,48 @@ class HttpCache extends StorageManager
 
     /**
      * Instance du gestionnaire de fichiers de cache.
-     * @var Filesystem
+     * @var Cache
      */
     protected $cache;
 
     /**
+     * Instance du gestionnaire de configuration.
+     * @var Config
+     */
+    protected $config;
+
+    /**
      * CONSTRUCTEUR.
      *
+     * @param ConfigContract|array $config Instance du gestionnaire de configuration ou liste
      * @param Container|null $container Instance du conteneur d'injection de dépendances.
      *
      * @return void
      */
-    public function __construct(?Container $container = null)
+    public function __construct($config = [], ?Container $container = null)
     {
         $this->container = $container;
 
-        parent::__construct($container);
+        if (is_array($config)) {
+            $config = $this->container
+                ? $this->getContainer()->get(ConfigContract::class)->set($config)
+                : (new Config())->set($config);
+        }
+        $this->setConfig($config);
     }
 
     /**
-     * Récupération de l'instance du gestionnaire de fichiers de cache.
-     *
-     * @return Filesystem
+     * @inheritDoc
      */
-    public function cache()
+    public function cache(): Cache
     {
         if (is_null($this->cache)) {
-            $this->cache = $this->createLocal(WP_CONTENT_DIR . '/uploads/cache/HttpCache');
+            if (!$cache = $this->config('cache', null)) {
+                $cache = $this->getContainer()
+                    ? $this->getContainer()->get(CacheStaticContract::class)
+                    : new CacheStatic();
+            }
+            $this->setCache($cache);
         }
 
         return $this->cache;
@@ -87,8 +106,42 @@ class HttpCache extends StorageManager
     /**
      * @inheritDoc
      */
+    public function config($key = null, $default = null)
+    {
+        if (is_null($key)) {
+            return $this->config;
+        } elseif (is_array($key)) {
+            return $this->config->set($key);
+        } else {
+            return $this->config->get($key, $default);
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function getContainer(): ?Container
     {
         return $this->container;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setCache(Cache $cache): HttpCacheContract
+    {
+        $this->cache = $cache;
+
+        return $this;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setConfig(ConfigContract $config): HttpCacheContract
+    {
+        $this->config = $config->parse();
+
+        return $this;
     }
 }

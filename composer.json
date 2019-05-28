@@ -15,7 +15,7 @@
     "psr-15"
   ],
   "homepage": "https://svn.tigreblanc.fr/presstify-plugins/http-cache",
-  "time": "2019-05-27",
+  "time": "2019-05-28",
   "license": "proprietary",
   "authors": [
     {
@@ -31,9 +31,10 @@
     }
   ],
   "require": {
+    "ext-zlib": "*",
     "composer/installers": "~1.0",
-    "mrclay/minify": "^3.0",
-    "presstify/framework": "2.0.*"
+    "presstify/framework": "2.0.*",
+    "voku/html-min": "^3.1"
   },
   "autoload": {
     "psr-4": {
