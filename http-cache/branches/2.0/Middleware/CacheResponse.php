@@ -36,7 +36,6 @@ class CacheResponse implements MiddlewareInterface
                 return $this->responseCache->getCacheResponse($request);
             }
         }
-
         $response = $handler->handle($request);
 
         events()->listen('router.emit.response', function (ResponseInterface $response) use ($request) {
