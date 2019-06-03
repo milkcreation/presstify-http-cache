@@ -1,0 +1,52 @@
+{
+  "name": "presstify-plugins/http-cache",
+  "description": "Extension PresstiFy de mise en cache de la reponse HTTP.",
+  "type": "presstify-plugin",
+  "keywords": [
+    "presstify",
+    "plugins",
+    "wordpress",
+    "http",
+    "cache",
+    "response",
+    "request",
+    "buffering",
+    "psr-7",
+    "psr-15"
+  ],
+  "homepage": "https://svn.tigreblanc.fr/presstify-plugins/http-cache",
+  "time": "2019-05-29",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Jordy Manner",
+      "email": "jordy.manner@milkcreation.fr",
+      "role": "Developper"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "http://composer.tigreblanc.fr/presstify/"
+    }
+  ],
+  "require": {
+    "ext-zlib": "*",
+    "composer/installers": "~1.0",
+    "presstify/framework": "2.0.*",
+    "voku/html-min": "^3.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "tiFy\\Plugins\\HttpCache\\": ""
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "config" : {
+    "optimize-autoloader": true,
+    "preferred-install": "dist",
+    "secure-http": false,
+    "sort-packages": true
+  }
+}
