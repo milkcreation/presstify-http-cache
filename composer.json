@@ -14,20 +14,13 @@
     "psr-7",
     "psr-15"
   ],
-  "homepage": "https://svn.tigreblanc.fr/presstify-plugins/http-cache",
-  "time": "2019-05-29",
-  "license": "proprietary",
+  "homepage": "https://github.com/milkcreation/presstify-http-cache.git",
+  "time": "2021-09-14",
   "authors": [
     {
       "name": "Jordy Manner",
       "email": "jordy.manner@milkcreation.fr",
       "role": "Developper"
-    }
-  ],
-  "repositories": [
-    {
-      "type": "composer",
-      "url": "http://composer.tigreblanc.fr/presstify/"
     }
   ],
   "require": {
